@@ -33,6 +33,7 @@ The rootfs is bootstrapped from Ubuntu `resolute`, then configured with:
 This keeps the image Docker-native and avoids desktop/systemd/kernel boot stack payload.
 
 During build, the rootfs is updated (`dist-upgrade`) before AnduinOS container packages are installed, then APT caches/lists are cleaned to keep image size smaller.
+The build also clears `machine-id` and `resolv.conf` to avoid cloned identity and builder-environment DNS residue in published images.
 
 ## Build flow
 
@@ -46,6 +47,7 @@ Security and trust:
 - debootstrap is executed with an explicit Ubuntu archive keyring (`--keyring=...`)
 - the keyring is then installed into the rootfs at `/usr/share/keyrings/ubuntu-archive-keyring.gpg`
 - APT deb822 source entries use `Signed-By` for both Ubuntu and AnduinOS repositories
+- chroot runs with `/proc`, `/sys`, `/dev` mounts when permitted by the builder runtime
 
 Architecture handling:
 
