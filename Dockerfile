@@ -31,4 +31,17 @@ LABEL org.opencontainers.image.title="AnduinOS Container" \
 
 COPY --from=rootfs-builder /out/rootfs/ /
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get -y dist-upgrade \
+    && apt-get install -y \
+        base-files \
+        anduinos-apt-config \
+        anduinos-container \
+    && apt-get clean \
+    && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
+    && rm -f /etc/machine-id /var/lib/dbus/machine-id \
+    && touch /etc/machine-id
+
 CMD ["/bin/bash"]

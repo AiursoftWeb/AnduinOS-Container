@@ -40,19 +40,7 @@ if [[ ! -e "$DEBOOTSTRAP_SCRIPT" ]]; then
 fi
 
 WORKDIR="$(mktemp -d)"
-cleanup() {
-    if grep -qs " $ROOTFS_DIR/proc " /proc/mounts; then
-        umount "$ROOTFS_DIR/proc" || true
-    fi
-    if grep -qs " $ROOTFS_DIR/sys " /proc/mounts; then
-        umount "$ROOTFS_DIR/sys" || true
-    fi
-    if grep -qs " $ROOTFS_DIR/dev " /proc/mounts; then
-        umount "$ROOTFS_DIR/dev" || true
-    fi
-    rm -rf "$WORKDIR"
-}
-trap cleanup EXIT
+trap 'rm -rf "$WORKDIR"' EXIT
 UBUNTU_KEYRING="$WORKDIR/ubuntu-archive-keyring.gpg"
 curl -fsSL "$UBUNTU_ARCHIVE_KEYRING_URL" > "$UBUNTU_KEYRING"
 
@@ -111,25 +99,4 @@ Architectures: $TARGET_ARCH
 Signed-By: /usr/share/keyrings/anduinos-archive-keyring.gpg
 EOF
 
-mkdir -p "$ROOTFS_DIR/proc" "$ROOTFS_DIR/sys" "$ROOTFS_DIR/dev"
-if mount -t proc proc "$ROOTFS_DIR/proc" \
-    && mount -t sysfs sysfs "$ROOTFS_DIR/sys" \
-    && mount --bind /dev "$ROOTFS_DIR/dev"; then
-    echo "Mounted /proc, /sys and /dev for chroot operations."
-else
-    echo "Skipping /proc,/sys,/dev mounts in restricted build environment." >&2
-fi
-
-chroot "$ROOTFS_DIR" apt-get update
-chroot "$ROOTFS_DIR" env DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-chroot "$ROOTFS_DIR" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    base-files \
-    anduinos-apt-config \
-    anduinos-container
-
-chroot "$ROOTFS_DIR" apt-get clean
-rm -rf "$ROOTFS_DIR/var/cache/apt/archives/"*
-rm -rf "$ROOTFS_DIR/var/lib/apt/lists/"*
 rm -f "$ROOTFS_DIR/etc/resolv.conf"
-rm -f "$ROOTFS_DIR/etc/machine-id" "$ROOTFS_DIR/var/lib/dbus/machine-id"
-touch "$ROOTFS_DIR/etc/machine-id"
