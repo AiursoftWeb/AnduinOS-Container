@@ -75,9 +75,14 @@ docker build . -t anduinos-container:test
 GitLab CI uses `docker buildx build` with:
 
 - `--platform linux/amd64,linux/arm64`
-- `--build-arg UBUNTU_SUITE=resolute`
+- `--build-arg UBUNTU_SUITE=<suite>`
 
-and pushes to configured registries as a multi-arch manifest with both tags:
+CI variables:
 
-- `aiursoft/anduinos:resolute`
-- `aiursoft/anduinos:latest` (same image as `resolute`)
+- `SUPPORTED_SUITES` (space-separated list, default: `resolute`)
+- `LATEST_SUITE` (default: `resolute`, must be included in `SUPPORTED_SUITES`)
+
+Tag behavior:
+
+- each suite in `SUPPORTED_SUITES` publishes `aiursoft/anduinos:<suite>`
+- `aiursoft/anduinos:latest` points to `LATEST_SUITE`

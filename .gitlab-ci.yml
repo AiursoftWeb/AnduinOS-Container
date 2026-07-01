@@ -2,43 +2,64 @@ stages:
   - deploy
 
 deploy_docker_all:
-    stage: deploy
-    environment: production
-    script:
-        - IMAGE_NAMESPACE="aiursoft"
-        - IMAGE_NAME="anduinos"
-        - RESOLUTE_TAG="resolute"
-        - LATEST_TAG="latest"
-        
-        # 准备目标镜像名称
-        - LOCAL_TARGET_COM_RESOLUTE="hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$RESOLUTE_TAG"
-        - LOCAL_TARGET_CN_RESOLUTE="hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$RESOLUTE_TAG"
-        - PUBLIC_TARGET_RESOLUTE="$IMAGE_NAMESPACE/$IMAGE_NAME:$RESOLUTE_TAG"
-        - LOCAL_TARGET_COM_LATEST="hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$LATEST_TAG"
-        - LOCAL_TARGET_CN_LATEST="hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$LATEST_TAG"
-        - PUBLIC_TARGET_LATEST="$IMAGE_NAMESPACE/$IMAGE_NAME:$LATEST_TAG"
-        
-        # 1. 集中进行所有的登录操作
-        - echo "$LOCAL_DOCKER_PASSWORD" | docker login hub.aiursoft.com -u "$LOCAL_DOCKER_USERNAME" --password-stdin
-        - echo "$CN_DOCKER_PASSWORD" | docker login hub.aiursoft.cn -u "$CN_DOCKER_USERNAME" --password-stdin
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        
-        # 2. 全程使用我们强大的全局多架构 Builder
-        - docker buildx use aiur-global-builder
-        
-        - echo "Building and pushing multi-arch to all registries..."
-        - |
-            docker buildx build . \
-              --platform linux/amd64,linux/arm64 \
-              --build-arg UBUNTU_SUITE=resolute \
-              -t $LOCAL_TARGET_COM_RESOLUTE \
-              -t $LOCAL_TARGET_CN_RESOLUTE \
-              -t $PUBLIC_TARGET_RESOLUTE \
-              -t $LOCAL_TARGET_COM_LATEST \
-              -t $LOCAL_TARGET_CN_LATEST \
-              -t $PUBLIC_TARGET_LATEST \
-              --push
-    rules:
-        - if: '$CI_COMMIT_BRANCH == "master"'
-          exists:
-              - Dockerfile
+  stage: deploy
+  environment: production
+  script:
+    - IMAGE_NAMESPACE="aiursoft"
+    - IMAGE_NAME="anduinos"
+    - SUPPORTED_SUITES="${SUPPORTED_SUITES:-resolute}"
+    - LATEST_SUITE="${LATEST_SUITE:-resolute}"
+    - |
+      case " $SUPPORTED_SUITES " in
+        *" $LATEST_SUITE "*) ;;
+        *)
+          echo "LATEST_SUITE=$LATEST_SUITE is not in" \
+            "SUPPORTED_SUITES='$SUPPORTED_SUITES'" >&2
+          exit 1
+          ;;
+      esac
+    - |
+      echo "$LOCAL_DOCKER_PASSWORD" \
+        | docker login hub.aiursoft.com \
+            -u "$LOCAL_DOCKER_USERNAME" \
+            --password-stdin
+    - |
+      echo "$CN_DOCKER_PASSWORD" \
+        | docker login hub.aiursoft.cn \
+            -u "$CN_DOCKER_USERNAME" \
+            --password-stdin
+    - |
+      echo "$DOCKER_PASSWORD" \
+        | docker login \
+            -u "$DOCKER_USERNAME" \
+            --password-stdin
+    - docker buildx use aiur-global-builder
+    - 'echo "Building suites: $SUPPORTED_SUITES (latest -> $LATEST_SUITE)"'
+    - |
+      for SUITE in $SUPPORTED_SUITES; do
+        echo "Building and pushing suite: $SUITE"
+        if [ "$SUITE" = "$LATEST_SUITE" ]; then
+          docker buildx build . \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg UBUNTU_SUITE="$SUITE" \
+            -t "hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
+            -t "hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
+            -t "$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
+            -t "hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:latest" \
+            -t "hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:latest" \
+            -t "$IMAGE_NAMESPACE/$IMAGE_NAME:latest" \
+            --push
+        else
+          docker buildx build . \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg UBUNTU_SUITE="$SUITE" \
+            -t "hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
+            -t "hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
+            -t "$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
+            --push
+        fi
+      done
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      exists:
+        - Dockerfile
