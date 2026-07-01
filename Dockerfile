@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim AS rootfs-builder
+FROM hub.aiursoft.com/debian:stable-slim AS rootfs-builder
 
 ARG TARGETARCH
 ARG UBUNTU_SUITE=resolute
