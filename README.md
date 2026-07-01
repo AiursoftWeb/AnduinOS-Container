@@ -4,6 +4,22 @@ AnduinOS Container is a cloud-native, multi-architecture image built with **debo
 
 Current first-release scope is **resolute**.
 
+## Pull image
+
+Default pull:
+
+```bash
+sudo docker pull aiursoft/anduinos
+```
+
+This resolves to `:latest`.
+
+Recommended for reproducibility:
+
+```bash
+sudo docker pull aiursoft/anduinos:resolute
+```
+
 ## What the image contains
 
 The rootfs is bootstrapped from Ubuntu `resolute`, then configured with:
@@ -15,6 +31,8 @@ The rootfs is bootstrapped from Ubuntu `resolute`, then configured with:
 - `anduinos-container`
 
 This keeps the image Docker-native and avoids desktop/systemd/kernel boot stack payload.
+
+During build, the rootfs is updated (`dist-upgrade`) before AnduinOS container packages are installed, then APT caches/lists are cleaned to keep image size smaller.
 
 ## Build flow
 
@@ -59,4 +77,7 @@ GitLab CI uses `docker buildx build` with:
 - `--platform linux/amd64,linux/arm64`
 - `--build-arg UBUNTU_SUITE=resolute`
 
-and pushes to configured registries as a multi-arch manifest tag.
+and pushes to configured registries as a multi-arch manifest with both tags:
+
+- `aiursoft/anduinos:resolute`
+- `aiursoft/anduinos:latest` (same image as `resolute`)

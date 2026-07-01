@@ -5,13 +5,18 @@ deploy_docker_all:
     stage: deploy
     environment: production
     script:
-        - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then TAG="latest"; else TAG="$CI_COMMIT_REF_NAME"; fi
-        - if [ "$CI_PROJECT_NAMESPACE" = "anduin" ]; then HUB_NAMESPACE="anduin2019"; else HUB_NAMESPACE="$CI_PROJECT_NAMESPACE"; fi
+        - IMAGE_NAMESPACE="aiursoft"
+        - IMAGE_NAME="anduinos"
+        - RESOLUTE_TAG="resolute"
+        - LATEST_TAG="latest"
         
         # 准备目标镜像名称
-        - LOCAL_TARGET_COM="hub.aiursoft.com/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$TAG"
-        - LOCAL_TARGET_CN="hub.aiursoft.cn/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$TAG"
-        - PUBLIC_TARGET="$HUB_NAMESPACE/$CI_PROJECT_NAME:$TAG"
+        - LOCAL_TARGET_COM_RESOLUTE="hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$RESOLUTE_TAG"
+        - LOCAL_TARGET_CN_RESOLUTE="hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$RESOLUTE_TAG"
+        - PUBLIC_TARGET_RESOLUTE="$IMAGE_NAMESPACE/$IMAGE_NAME:$RESOLUTE_TAG"
+        - LOCAL_TARGET_COM_LATEST="hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$LATEST_TAG"
+        - LOCAL_TARGET_CN_LATEST="hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$LATEST_TAG"
+        - PUBLIC_TARGET_LATEST="$IMAGE_NAMESPACE/$IMAGE_NAME:$LATEST_TAG"
         
         # 1. 集中进行所有的登录操作
         - echo "$LOCAL_DOCKER_PASSWORD" | docker login hub.aiursoft.com -u "$LOCAL_DOCKER_USERNAME" --password-stdin
@@ -26,9 +31,12 @@ deploy_docker_all:
             docker buildx build . \
               --platform linux/amd64,linux/arm64 \
               --build-arg UBUNTU_SUITE=resolute \
-              -t $LOCAL_TARGET_COM \
-              -t $LOCAL_TARGET_CN \
-              -t $PUBLIC_TARGET \
+              -t $LOCAL_TARGET_COM_RESOLUTE \
+              -t $LOCAL_TARGET_CN_RESOLUTE \
+              -t $PUBLIC_TARGET_RESOLUTE \
+              -t $LOCAL_TARGET_COM_LATEST \
+              -t $LOCAL_TARGET_CN_LATEST \
+              -t $PUBLIC_TARGET_LATEST \
               --push
     rules:
         - if: '$CI_COMMIT_BRANCH == "master"'

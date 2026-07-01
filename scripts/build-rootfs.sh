@@ -100,10 +100,12 @@ Signed-By: /usr/share/keyrings/anduinos-archive-keyring.gpg
 EOF
 
 chroot "$ROOTFS_DIR" apt-get update
+chroot "$ROOTFS_DIR" env DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
 chroot "$ROOTFS_DIR" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     base-files \
     anduinos-apt-config \
     anduinos-container
 
 chroot "$ROOTFS_DIR" apt-get clean
+rm -rf "$ROOTFS_DIR/var/cache/apt/archives/"*
 rm -rf "$ROOTFS_DIR/var/lib/apt/lists/"*
