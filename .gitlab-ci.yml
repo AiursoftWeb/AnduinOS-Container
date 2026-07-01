@@ -1,0 +1,36 @@
+stages:
+  - deploy
+
+deploy_docker_all:
+    stage: deploy
+    environment: production
+    script:
+        - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then TAG="latest"; else TAG="$CI_COMMIT_REF_NAME"; fi
+        - if [ "$CI_PROJECT_NAMESPACE" = "anduin" ]; then HUB_NAMESPACE="anduin2019"; else HUB_NAMESPACE="$CI_PROJECT_NAMESPACE"; fi
+        
+        # 准备目标镜像名称
+        - LOCAL_TARGET_COM="hub.aiursoft.com/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$TAG"
+        - LOCAL_TARGET_CN="hub.aiursoft.cn/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$TAG"
+        - PUBLIC_TARGET="$HUB_NAMESPACE/$CI_PROJECT_NAME:$TAG"
+        
+        # 1. 集中进行所有的登录操作
+        - echo "$LOCAL_DOCKER_PASSWORD" | docker login hub.aiursoft.com -u "$LOCAL_DOCKER_USERNAME" --password-stdin
+        - echo "$CN_DOCKER_PASSWORD" | docker login hub.aiursoft.cn -u "$CN_DOCKER_USERNAME" --password-stdin
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        
+        # 2. 全程使用我们强大的全局多架构 Builder
+        - docker buildx use aiur-global-builder
+        
+        - echo "Building and pushing multi-arch to all registries..."
+        - |
+            docker buildx build . \
+              --platform linux/amd64,linux/arm64 \
+              --build-arg UBUNTU_SUITE=resolute \
+              -t $LOCAL_TARGET_COM \
+              -t $LOCAL_TARGET_CN \
+              -t $PUBLIC_TARGET \
+              --push
+    rules:
+        - if: '$CI_COMMIT_BRANCH == "master"'
+          exists:
+              - Dockerfile
