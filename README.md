@@ -23,6 +23,12 @@ Build logic lives in:
 - `scripts/build-rootfs.sh` - creates and configures rootfs
 - `Dockerfile` - runs rootfs build in a builder stage and publishes a `scratch` final image
 
+Security and trust:
+
+- debootstrap is executed with an explicit Ubuntu archive keyring (`--keyring=...`)
+- the keyring is then installed into the rootfs at `/usr/share/keyrings/ubuntu-archive-keyring.gpg`
+- APT deb822 source entries use `Signed-By` for both Ubuntu and AnduinOS repositories
+
 Architecture handling:
 
 - `amd64` uses `http://archive.ubuntu.com/ubuntu`

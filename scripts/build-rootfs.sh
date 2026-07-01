@@ -6,6 +6,7 @@ UBUNTU_SUITE="${2:-resolute}"
 ROOTFS_DIR="${3:-/out/rootfs}"
 APKG_SERVER="${4:-https://packages.anduinos.com}"
 APKG_CERT_NAME="${5:-anduinos}"
+UBUNTU_ARCHIVE_KEYRING_URL="${UBUNTU_ARCHIVE_KEYRING_URL:-https://archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg}"
 
 if [[ -z "$TARGET_ARCH" ]]; then
     echo "TARGET_ARCH is required. Expected: amd64 or arm64." >&2
@@ -28,13 +29,32 @@ esac
 rm -rf "$ROOTFS_DIR"
 mkdir -p "$ROOTFS_DIR"
 
+DEBOOTSTRAP_SCRIPT="/usr/share/debootstrap/scripts/$UBUNTU_SUITE"
+if [[ ! -e "$DEBOOTSTRAP_SCRIPT" ]]; then
+    if [[ "$UBUNTU_SUITE" == "resolute" && -e /usr/share/debootstrap/scripts/gutsy ]]; then
+        ln -s /usr/share/debootstrap/scripts/gutsy "$DEBOOTSTRAP_SCRIPT"
+    else
+        echo "Unsupported Ubuntu suite for local debootstrap scripts: $UBUNTU_SUITE" >&2
+        exit 1
+    fi
+fi
+
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+UBUNTU_KEYRING="$WORKDIR/ubuntu-archive-keyring.gpg"
+curl -fsSL "$UBUNTU_ARCHIVE_KEYRING_URL" > "$UBUNTU_KEYRING"
+
 debootstrap \
     --arch="$TARGET_ARCH" \
     --variant=minbase \
+    --keyring="$UBUNTU_KEYRING" \
     --include=ca-certificates,curl,gnupg \
     "$UBUNTU_SUITE" \
     "$ROOTFS_DIR" \
     "$UBUNTU_MIRROR"
+
+mkdir -p "$ROOTFS_DIR/usr/share/keyrings"
+install -m 0644 "$UBUNTU_KEYRING" "$ROOTFS_DIR/usr/share/keyrings/ubuntu-archive-keyring.gpg"
 
 mkdir -p "$ROOTFS_DIR/etc/apt/sources.list.d"
 cat > "$ROOTFS_DIR/etc/apt/sources.list.d/ubuntu.sources" <<EOF
@@ -65,7 +85,6 @@ EOF
 
 rm -f "$ROOTFS_DIR/etc/apt/sources.list"
 
-mkdir -p "$ROOTFS_DIR/usr/share/keyrings"
 curl -fsSL "$APKG_SERVER/artifacts/certs/$APKG_CERT_NAME" \
     | sed '1s/^\xEF\xBB\xBF//' \
     | gpg --dearmor \
