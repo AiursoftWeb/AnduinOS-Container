@@ -13,18 +13,7 @@ if [[ -z "$TARGET_ARCH" ]]; then
     exit 1
 fi
 
-case "$TARGET_ARCH" in
-amd64)
-    UBUNTU_MIRROR="http://archive.ubuntu.com/ubuntu"
-    ;;
-arm64)
-    UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports"
-    ;;
-*)
-    echo "Unsupported TARGET_ARCH: $TARGET_ARCH. Expected: amd64 or arm64." >&2
-    exit 1
-    ;;
-esac
+UBUNTU_MIRROR="http://mirror.aiursoft.com/ubuntu"
 
 rm -rf "$ROOTFS_DIR"
 mkdir -p "$ROOTFS_DIR"

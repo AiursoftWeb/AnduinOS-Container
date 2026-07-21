@@ -50,8 +50,7 @@ Security and trust:
 
 Architecture handling:
 
-- `amd64` uses `http://archive.ubuntu.com/ubuntu`
-- `arm64` uses `http://ports.ubuntu.com/ubuntu-ports`
+- Both `amd64` and `arm64` use `http://mirror.aiursoft.com/ubuntu`
 
 ## Local build
 
