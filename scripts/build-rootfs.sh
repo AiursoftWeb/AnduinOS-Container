@@ -13,7 +13,17 @@ if [[ -z "$TARGET_ARCH" ]]; then
     exit 1
 fi
 
-UBUNTU_MIRROR="http://mirror.aiursoft.com/ubuntu"
+case "$TARGET_ARCH" in
+amd64|arm64)
+    UBUNTU_MIRROR="http://archive.ubuntu.com/ubuntu"
+    ;;
+*)
+    echo "Unsupported TARGET_ARCH: $TARGET_ARCH. Expected: amd64 or arm64." >&2
+    exit 1
+    ;;
+esac
+
+DEBOOTSTRAP_MIRROR="https://mirror.aiursoft.com/ubuntu/"
 
 rm -rf "$ROOTFS_DIR"
 mkdir -p "$ROOTFS_DIR"
@@ -40,7 +50,7 @@ debootstrap \
     --include=ca-certificates,curl,gnupg \
     "$UBUNTU_SUITE" \
     "$ROOTFS_DIR" \
-    "$UBUNTU_MIRROR"
+    "$DEBOOTSTRAP_MIRROR"
 
 mkdir -p "$ROOTFS_DIR/usr/share/keyrings"
 install -m 0644 "$UBUNTU_KEYRING" "$ROOTFS_DIR/usr/share/keyrings/ubuntu-archive-keyring.gpg"

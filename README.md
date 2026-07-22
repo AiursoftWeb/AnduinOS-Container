@@ -48,10 +48,6 @@ Security and trust:
 - APT deb822 source entries use `Signed-By` for both Ubuntu and AnduinOS repositories
 - package installation happens in the Docker build stage instead of a manual chroot
 
-Architecture handling:
-
-- Both `amd64` and `arm64` use `http://mirror.aiursoft.com/ubuntu`
-
 ## Local build
 
 If your local Docker supports Buildx:
