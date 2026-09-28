@@ -20,14 +20,10 @@ RUN chmod +x /usr/local/bin/build-rootfs \
     && BUILD_ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
     && /usr/local/bin/build-rootfs "${BUILD_ARCH}" "${UBUNTU_SUITE}" /out/rootfs "${APKG_SERVER}" "${APKG_CERT_NAME}"
 
-FROM scratch
+FROM scratch AS installed-rootfs
 
 ARG TARGETARCH
 ARG UBUNTU_SUITE=resolute
-
-LABEL org.opencontainers.image.title="AnduinOS Container" \
-      org.opencontainers.image.description="Cloud-native AnduinOS container image bootstrapped with debootstrap." \
-      org.opencontainers.image.vendor="AnduinOS Team"
 
 COPY --from=rootfs-builder /out/rootfs/ /
 
@@ -43,5 +39,15 @@ RUN apt-get update \
     && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
     && rm -f /etc/machine-id /var/lib/dbus/machine-id \
     && touch /etc/machine-id
+
+FROM scratch
+
+LABEL org.opencontainers.image.title="AnduinOS Container" \
+      org.opencontainers.image.description="Cloud-native AnduinOS container image bootstrapped with debootstrap." \
+      org.opencontainers.image.vendor="AnduinOS Team"
+
+COPY --from=installed-rootfs / /
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 CMD ["/bin/bash"]
