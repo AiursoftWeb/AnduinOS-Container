@@ -25,11 +25,6 @@ deploy_docker_all:
             -u "$LOCAL_DOCKER_USERNAME" \
             --password-stdin
     - |
-      echo "$CN_DOCKER_PASSWORD" \
-        | docker login hub.aiursoft.cn \
-            -u "$CN_DOCKER_USERNAME" \
-            --password-stdin
-    - |
       echo "$DOCKER_PASSWORD" \
         | docker login \
             -u "$DOCKER_USERNAME" \
@@ -44,10 +39,8 @@ deploy_docker_all:
             --platform linux/amd64,linux/arm64 \
             --build-arg UBUNTU_SUITE="$SUITE" \
             -t "hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
-            -t "hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
             -t "$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
             -t "hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:latest" \
-            -t "hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:latest" \
             -t "$IMAGE_NAMESPACE/$IMAGE_NAME:latest" \
             --push
         else
@@ -55,7 +48,6 @@ deploy_docker_all:
             --platform linux/amd64,linux/arm64 \
             --build-arg UBUNTU_SUITE="$SUITE" \
             -t "hub.aiursoft.com/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
-            -t "hub.aiursoft.cn/$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
             -t "$IMAGE_NAMESPACE/$IMAGE_NAME:$SUITE" \
             --push
         fi
